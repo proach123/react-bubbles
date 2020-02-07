@@ -1,15 +1,19 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useParams } from "react-router-dom";
+import { authios } from "../utils/authios";
+import CreateColorForm from "./CreateColorForm";
 
 const initialColor = {
   color: "",
   code: { hex: "" }
 };
 
-const ColorList = ({ colors, updateColors }) => {
+const ColorList = ({ colors, updateColors }, props) => {
   console.log(colors);
   const [editing, setEditing] = useState(false);
   const [colorToEdit, setColorToEdit] = useState(initialColor);
+  const {id} = useParams();
 
   const editColor = color => {
     setEditing(true);
@@ -18,14 +22,39 @@ const ColorList = ({ colors, updateColors }) => {
 
   const saveEdit = e => {
     e.preventDefault();
+    authios()
+    .put(`/api/colors/${id}`, colorToEdit)
+    .then(res => {
+
+      let newArray =colors.filter((elm)=>{
+        return elm.id !== colorToEdit.id
+      })
+
+      updateColors([...newArray, res.data])
+      console.log(colors)
+    })
+    .catch(err => console.log(err));
+};
+
     // Make a put request to save your updated color
     // think about where will you get the id from...
     // where is is saved right now?
-  };
 
   const deleteColor = color => {
+    console.log(color)
+    authios().delete(`/api/colors/${color.id}`).then(
+      res=>{
+        let newArray = colors.filter((elm)=>{
+          return elm.id !== color.id
+        })
+        console.log(newArray)
+        updateColors([...newArray])
+      }
+      
+    ).catch(err => console.log(err))
     // make a delete request to delete this color
   };
+
 
   return (
     <div className="colors-wrap">
@@ -81,7 +110,7 @@ const ColorList = ({ colors, updateColors }) => {
         </form>
       )}
       <div className="spacer" />
-      {/* stretch - build another form here to add a color */}
+      <CreateColorForm updateColors={updateColors} state={colors} />
     </div>
   );
 };
